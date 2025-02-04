@@ -41,9 +41,22 @@ export function App() {
     localStorage.setItem('notes', JSON.stringify(arrayNotes))
   }
 
+  function handleEditNote(id: string, content: string) {
+    const arrayNotes = notes.map((note) => {
+      if (note.id == id) {
+        return { ...note, content }
+      }
+
+      return note
+    })
+
+    setNotes(arrayNotes)
+
+    localStorage.setItem('notes', JSON.stringify(arrayNotes))
+  }
+
   function handleSearch(event: ChangeEvent<HTMLInputElement>) {
     const search = event.target.value
-
     setSearch(search)
   }
 
@@ -73,7 +86,14 @@ export function App() {
         <NewNoteCard handleCreateNote={handleCreateNote} />
 
         {notesFiltered.map((note) => {
-          return <NoteCard key={note.id} note={note} handleDeleteNote={handleDeleteNote} />
+          return (
+            <NoteCard
+              key={note.id}
+              note={note}
+              deleteNote={handleDeleteNote}
+              editNote={handleEditNote}
+            />
+          )
         })}
       </div>
     </div>
