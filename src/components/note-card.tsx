@@ -4,9 +4,10 @@ import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { X } from 'lucide-react'
 import { toast } from 'sonner'
-import { TextareaEditor } from './textarea-editor'
 
-interface NoteCardProps {
+type UnsavedNotes = Record<string, string>
+
+type NoteCardProps = {
   note: {
     id: string
     date: Date
@@ -16,33 +17,92 @@ interface NoteCardProps {
   editNote: (id: string, content: string) => void
 }
 
+function getUnsavedNotes() {
+  const unsavedNotesString = localStorage.getItem('unsaved_notes')
+  return unsavedNotesString ? (JSON.parse(unsavedNotesString) as UnsavedNotes) : null
+}
+
+function removeUnsavedNoteEntry(noteId: string) {
+  const unsavedNotes = getUnsavedNotes()
+
+  if (!unsavedNotes || !unsavedNotes[noteId]) return
+
+  delete unsavedNotes[noteId]
+
+  localStorage.setItem('unsaved_notes', JSON.stringify(unsavedNotes))
+}
+
 export function NoteCard({ note, deleteNote, editNote }: NoteCardProps) {
   const [shouldShowOnboarding, setShouldShowOnboarding] = useState(false)
-  const { id, date, content } = note
-  let newContentText = content
+
+  const unsavedNotes = getUnsavedNotes()
+  const noteUnsavedChanges = unsavedNotes && unsavedNotes[note.id] ? unsavedNotes[note.id] : null
+
+  let contentText = noteUnsavedChanges ?? note.content
 
   function handleSave() {
-    if (newContentText == content) {
+    if (contentText == note.content) {
       toast.warning('Sem alterações.')
       return
     }
-    editNote(id, newContentText)
+    editNote(note.id, contentText)
+    removeUnsavedNoteEntry(note.id)
     setShouldShowOnboarding(false)
     toast.success('Nota atualizada.')
   }
 
   function handleCancel() {
-    newContentText = ''
+    contentText = ''
     setShouldShowOnboarding(false)
   }
 
+  function handleCloseDialog() {
+    const hasContentChange = contentText != note.content
+    const unsavedNotes = getUnsavedNotes()
+
+    if (hasContentChange) {
+      if (!unsavedNotes) {
+        localStorage.setItem('unsaved_notes', JSON.stringify({ [note.id]: contentText }))
+      } else {
+        unsavedNotes[note.id] = contentText
+        localStorage.setItem('unsaved_notes', JSON.stringify(unsavedNotes))
+      }
+    } else {
+      if (unsavedNotes && unsavedNotes[note.id]) {
+        delete unsavedNotes[note.id]
+        localStorage.setItem('unsaved_notes', JSON.stringify(unsavedNotes))
+      }
+    }
+
+    shouldShowOnboarding && setShouldShowOnboarding(false)
+  }
+
+  function handleOpenDialog() {
+    !!noteUnsavedChanges && setShouldShowOnboarding(true)
+  }
+
   return (
-    <Dialog.Root>
+    <Dialog.Root
+      onOpenChange={(open) => {
+        if (!open) {
+          handleCloseDialog()
+        } else {
+          handleOpenDialog()
+        }
+      }}
+    >
       <Dialog.Trigger className="relative flex flex-col gap-3 overflow-hidden rounded-md bg-slate-700 p-5 outline-none hover:ring-2 hover:ring-slate-600 focus-visible:ring-2 focus-visible:ring-lime-400">
-        <span className="text-lg font-medium text-slate-300">
-          {formatDistanceToNow(date, { locale: ptBR, addSuffix: true })}
+        <span className="text-left text-lg font-medium text-slate-300">
+          {formatDistanceToNow(note.date, { locale: ptBR, addSuffix: true })}
         </span>
-        <p className="text-md text-start leading-6 text-slate-400">{content}</p>
+
+        {noteUnsavedChanges && (
+          <span className="absolute right-2 top-0 text-sm text-yellow-300">
+            alterações não salvas
+          </span>
+        )}
+
+        <p className="text-md text-start leading-6 text-slate-400">{note.content}</p>
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-slate-950 to-transparent" />
       </Dialog.Trigger>
 
@@ -55,17 +115,23 @@ export function NoteCard({ note, deleteNote, editNote }: NoteCardProps) {
 
           <div className="flex flex-1 flex-col gap-3 p-5">
             <span className="text-lg font-medium text-slate-300">
-              {formatDistanceToNow(date, { locale: ptBR, addSuffix: true })}
+              {formatDistanceToNow(note.date, { locale: ptBR, addSuffix: true })}
             </span>
             {shouldShowOnboarding ? (
-              <TextareaEditor
-                handleContentChange={(event) => {
-                  newContentText = event.target.value
+              <textarea
+                autoFocus
+                className="scrollbar-hide flex-1 resize-none rounded-md bg-slate-600/50 p-2 text-lg leading-6 text-slate-200 outline-none transition focus:shadow-2xl"
+                defaultValue={contentText}
+                onChange={(event) => {
+                  contentText = event.target.value
                 }}
-                content={content}
+                onFocus={(ev) => {
+                  const length = ev.currentTarget.value.length
+                  ev.currentTarget.setSelectionRange(length, length)
+                }}
               />
             ) : (
-              <p className="text-lg leading-6 text-slate-400">{content}</p>
+              <p className="text-lg leading-6 text-slate-400">{contentText}</p>
             )}
           </div>
 
