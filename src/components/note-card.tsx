@@ -4,6 +4,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { X } from 'lucide-react'
 import { toast } from 'sonner'
+import { Button } from './button'
 
 type UnsavedNotes = Record<string, string>
 
@@ -91,7 +92,7 @@ export function NoteCard({ note, deleteNote, editNote }: NoteCardProps) {
         }
       }}
     >
-      <Dialog.Trigger className="relative flex flex-col gap-3 overflow-hidden rounded-md bg-slate-700 p-5 outline-none hover:ring-2 hover:ring-slate-600 focus-visible:ring-2 focus-visible:ring-lime-400">
+      <Dialog.Trigger className="relative flex flex-col gap-3 overflow-hidden rounded-md bg-slate-700 p-5 outline-none hover:ring hover:ring-slate-600 focus-visible:ring focus-visible:ring-lime-400">
         <span className="text-left text-lg font-medium text-slate-300">
           {formatDistanceToNow(note.date, { locale: ptBR, addSuffix: true })}
         </span>
@@ -117,6 +118,7 @@ export function NoteCard({ note, deleteNote, editNote }: NoteCardProps) {
             <span className="text-lg font-medium text-slate-300">
               {formatDistanceToNow(note.date, { locale: ptBR, addSuffix: true })}
             </span>
+            
             {shouldShowOnboarding ? (
               <textarea
                 autoFocus
@@ -138,39 +140,39 @@ export function NoteCard({ note, deleteNote, editNote }: NoteCardProps) {
           <div className="grid grid-cols-2 gap-x-4 md:gap-x-0">
             {shouldShowOnboarding ? (
               <>
-                <button
+                <Button
                   type="button"
+                  value="Cancelar"
+                  color="slate-300"
+                  className="md:-translate-x-5"
                   onClick={handleCancel}
-                  className="group w-full rounded-full bg-slate-800 py-4 text-center text-lg font-medium text-slate-300 outline-none md:-translate-x-5"
-                >
-                  <span className="text-slate-300 group-hover:underline">Cancelar</span>
-                </button>
+                />
 
-                <button
+                <Button
                   type="button"
+                  value="Salvar"
+                  color="lime-400"
+                  className="md:translate-x-5"
                   onClick={handleSave}
-                  className="group w-full rounded-full bg-slate-800 py-4 text-center text-lg font-medium text-slate-300 outline-none md:translate-x-5"
-                >
-                  <span className="text-lime-400 group-hover:underline">Salvar</span>
-                </button>
+                />
               </>
             ) : (
               <>
-                <button
+                <Button
                   type="button"
+                  value="Editar nota"
+                  color="cyan-500"
+                  className="md:-translate-x-5"
                   onClick={() => setShouldShowOnboarding(true)}
-                  className="group w-full rounded-full bg-slate-800 py-4 text-center text-lg font-medium text-slate-300 outline-none md:-translate-x-5"
-                >
-                  <span className="text-cyan-500 group-hover:underline">Editar nota</span>
-                </button>
+                />
 
-                <button
+                <Button
                   type="button"
+                  value="Apagar nota"
+                  color="red-500"
+                  className="md:translate-x-5"
                   onClick={() => deleteNote(note.id)}
-                  className="group w-full rounded-full bg-slate-800 py-4 text-center text-lg font-medium text-slate-300 outline-none md:translate-x-5"
-                >
-                  <span className="text-red-500 group-hover:underline">Apagar nota</span>
-                </button>
+                />
               </>
             )}
           </div>

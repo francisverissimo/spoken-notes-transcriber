@@ -1,8 +1,9 @@
-import { ChangeEvent, FormEvent, useState } from 'react'
+import { FormEvent, useRef, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { toast } from 'sonner'
-import { ChevronLeft, X } from 'lucide-react'
-import { TextareaEditor } from './textarea-editor'
+import { X } from 'lucide-react'
+import { NoteCreationMethodSelector } from './note-creation-method-selector'
+import { Button } from './button'
 
 interface NewNoteCardProps {
   handleCreateNote: (content: string) => void
@@ -13,22 +14,39 @@ let speechRecognition: SpeechRecognition | null = null
 export function NewNoteCard({ handleCreateNote }: NewNoteCardProps) {
   const [shouldShowOnboarding, setShouldShowOnboarding] = useState(true)
   const [isRecording, setIsRecording] = useState(false)
-  const [content, setContent] = useState('')
 
-  function handleShowOnboarding() {
+  const transcribedRef = useRef<HTMLTextAreaElement>(null)
+
+  function handleStartWriting() {
     setShouldShowOnboarding(false)
+    const textAreaEl = transcribedRef.current
+    if (textAreaEl) {
+      textAreaEl.focus()
+    }
   }
 
-  function handleContentChange(event: ChangeEvent<HTMLTextAreaElement>) {
-    setContent(event.target.value)
+  function handleCancelWritting() {
+    setShouldShowOnboarding(true)
+    setTextAreaValue('')
+  }
 
-    if (event.target.value == '') {
-      setShouldShowOnboarding(true)
-    }
+  function setTextAreaValue(value: string) {
+    const textAreaElement = transcribedRef.current
+    if (!textAreaElement) return
+    textAreaElement.value = value
+  }
+
+  function getTextAreaValue() {
+    const textAreaElement = transcribedRef.current
+    if (!textAreaElement) return ''
+    return textAreaElement.textContent
   }
 
   function handleSaveNote(event: FormEvent) {
     event.preventDefault()
+
+    const values = new FormData(event.target as HTMLFormElement)
+    const content = values.get('content') as string
 
     if (!content) {
       toast.warning('Por favor, escreva algo.')
@@ -36,10 +54,8 @@ export function NewNoteCard({ handleCreateNote }: NewNoteCardProps) {
     }
 
     handleCreateNote(content)
-
-    setContent('')
+    setTextAreaValue('')
     setShouldShowOnboarding(true)
-
     toast.success('Nota criada com sucesso!')
   }
 
@@ -70,7 +86,7 @@ export function NewNoteCard({ handleCreateNote }: NewNoteCardProps) {
         return text.concat(result[0].transcript)
       }, '')
 
-      setContent(transcription)
+      setTextAreaValue(transcription)
     }
 
     speechRecognition.onerror = (event) => {
@@ -81,25 +97,45 @@ export function NewNoteCard({ handleCreateNote }: NewNoteCardProps) {
   }
 
   function handleStopRecording() {
+    const textAreaEl = transcribedRef.current
     setIsRecording(false)
 
     if (speechRecognition) {
       speechRecognition.stop()
+      speechRecognition = null
+    }
+
+    if (textAreaEl) {
+      textAreaEl.focus()
     }
   }
 
   return (
     <Dialog.Root
-      onOpenChange={(openValue) => {
-        if (!openValue && !content && !shouldShowOnboarding) {
+      onOpenChange={(open) => {
+        const content = getTextAreaValue()
+
+        if (!open && !shouldShowOnboarding) {
           setShouldShowOnboarding(true)
         }
+
+        if (!open && speechRecognition) {
+          handleStopRecording()
+        }
+
+        if (open && content) {
+          // se modal for fechado inesperadamente, adicionar valor do textArea em
+          // LS 'unsaved_notes[new_note_unsaved]'
+        }
+
+        // se, ao abrir modal, existir valor em LS 'unsaved_notes[new_note_unsaved]'
+        // atribuir esse valor ao textArea
       }}
     >
-      <Dialog.Trigger className="relative flex flex-col gap-y-3 rounded-md bg-lime-700/30 p-5 text-left outline-none hover:ring-2 hover:ring-slate-600 focus-visible:ring-2 focus-visible:ring-lime-400">
+      <Dialog.Trigger className="relative flex flex-col gap-y-3 rounded-md bg-sky-700 p-5 text-left outline-none hover:ring hover:ring-sky-500 focus-visible:ring focus-visible:ring-lime-400">
         <span className="text-lg font-medium text-slate-200">Adicionar nota</span>
         <p className="text-lg leading-6 text-slate-200">
-          Escreva ou fale, que seu áudio será convertida para texto automaticamente.
+          Escreva ou fale, que seu áudio será transcrito para texto automaticamente.
         </p>
       </Dialog.Trigger>
 
@@ -110,65 +146,69 @@ export function NewNoteCard({ handleCreateNote }: NewNoteCardProps) {
             <X className="size-5" />
           </Dialog.Close>
 
-          <form onSubmit={handleSaveNote} className="flex flex-1 flex-col">
+          <form onSubmit={handleSaveNote} className="flex flex-1 flex-col gap-2">
             <div className="flex flex-1 flex-col gap-2 p-5">
               <div className="flex flex-col gap-2">
-                <span className="text-xl font-normal text-cyan-400">Adicionar uma nota</span>
-
-                {!isRecording && !shouldShowOnboarding && (
-                  <button
-                    onClick={() => setShouldShowOnboarding(true)}
-                    className="text-md flex items-center self-start text-slate-900"
-                  >
-                    <ChevronLeft className="size-10 rounded-full bg-slate-300 p-2.5 text-sm" />
-                    <span className="-translate-x-3 rounded-r-full bg-slate-300 px-3 py-1">
-                      Voltar a tela anterior
-                    </span>
-                  </button>
-                )}
+                <span className="text-center text-xl font-normal uppercase text-slate-200">
+                  Adicionar nota
+                </span>
               </div>
 
               {shouldShowOnboarding ? (
-                <div className="grid gap-4 md:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={handleStartRecording}
-                    className="rounded-full bg-slate-800 px-2 py-4 text-lg text-lime-400 hover:underline"
-                  >
-                    Transcrever áudio para texto
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleShowOnboarding}
-                    className="rounded-full bg-slate-800 px-2 py-4 text-lg text-slate-300 hover:underline"
-                  >
-                    Escrever nota
-                  </button>
-                </div>
+                <NoteCreationMethodSelector
+                  onStartRecording={handleStartRecording}
+                  onStartWriting={handleStartWriting}
+                />
               ) : (
-                <TextareaEditor content={content} handleContentChange={handleContentChange} />
+                <div className="flex h-full w-full flex-col">
+                  <textarea
+                    autoFocus={!shouldShowOnboarding}
+                    className="scrollbar-hide flex-1 resize-none rounded-md bg-slate-600/50 p-2 text-lg leading-6 text-slate-200 outline-none transition focus:shadow-2xl data-[hidden=true]:hidden"
+                    ref={transcribedRef}
+                    name="content"
+                    data-hidden={shouldShowOnboarding}
+                    onFocus={(ev) => {
+                      const length = ev.currentTarget.value.length
+                      ev.currentTarget.setSelectionRange(length, length)
+                    }}
+                  />
+                </div>
               )}
             </div>
 
-            <button
+            <Button
               type="button"
               data-recording={isRecording}
               onClick={handleStopRecording}
-              className="hidden w-full items-center justify-center gap-2 bg-slate-900 py-4 text-center text-lg font-medium text-slate-300 outline-none transition hover:text-slate-100 data-[recording=true]:flex"
+              // className="hidden w-full items-center justify-center gap-2 bg-slate-900 py-4 text-center text-lg font-medium text-slate-300 outline-none transition hover:text-slate-100 data-[recording=true]:flex"
             >
               <div className="size-3 animate-pulse rounded-full bg-red-500" />
               Gravando! (clique p/ interromper)
-            </button>
+            </Button>
 
-            <button
-              type="submit"
-              data-recording={isRecording}
-              data-should-show-onboarding={shouldShowOnboarding}
-              className="w-full bg-lime-400 py-4 text-center text-lg font-medium text-lime-950 outline-none transition hover:bg-lime-500 disabled:cursor-not-allowed data-[recording=true]:hidden data-[should-show-onboarding=true]:hidden"
-            >
-              Salvar nota
-            </button>
+            <div className="flex items-center justify-center">
+              {!isRecording && !shouldShowOnboarding && (
+                <Button
+                  value="cancelar"
+                  color="red-500"
+                  type="button"
+                  onClick={handleCancelWritting}
+                />
+              )}
+
+              {/* <button
+                type="submit"
+                data-recording={isRecording}
+                data-should-show-onboarding={shouldShowOnboarding}
+                className="mx-auto w-full rounded-full px-5 py-4 text-center text-lg font-medium uppercase text-lime-400 outline-none transition hover:underline disabled:cursor-not-allowed data-[recording=true]:hidden data-[should-show-onboarding=true]:hidden md:mb-5 md:w-fit"
+              >
+                Salvar
+              </button> */}
+
+              {/* first:md:-translate-x-5  */}
+
+              <Button type="submit" color="lime-400" value="salvar" className='md:translate-x-5' />
+            </div>
           </form>
         </Dialog.Content>
       </Dialog.Portal>
