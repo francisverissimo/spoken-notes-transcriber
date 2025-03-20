@@ -1,14 +1,14 @@
 import { Keyboard, Mic } from 'lucide-react'
 
-interface NoteCreationMethodSelectorProps {
+interface NewNoteModeSelectorProps {
   onStartRecording: () => void
   onStartWriting: () => void
 }
 
-export function NoteCreationMethodSelector({
+export function NewNoteModeSelector({
   onStartRecording,
   onStartWriting,
-}: NoteCreationMethodSelectorProps) {
+}: NewNoteModeSelectorProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <button

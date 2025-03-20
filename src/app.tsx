@@ -1,6 +1,6 @@
 import { ChangeEvent, useState } from 'react'
-import { NewNoteCard } from './components/new-note-card'
-import { NoteCard } from './components/note-card'
+import { NewNote } from './view/new-note'
+import { Note } from './view/note'
 
 interface Note {
   id: string
@@ -87,11 +87,11 @@ export function App() {
       ) : null}
 
       <div className="grid auto-rows-[250px] grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-        <NewNoteCard handleCreateNote={handleCreateNote} />
+        <NewNote handleCreateNote={handleCreateNote} />
 
         {notesFiltered.map((note) => {
           return (
-            <NoteCard
+            <Note
               key={note.id}
               note={note}
               deleteNote={handleDeleteNote}

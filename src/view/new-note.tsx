@@ -2,8 +2,8 @@ import { FormEvent, useRef, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { toast } from 'sonner'
 import { X } from 'lucide-react'
-import { NoteCreationMethodSelector } from './note-creation-method-selector'
-import { Button } from './button'
+import { Button } from '../components/button'
+import { NewNoteModeSelector } from './new-note-mode-selector'
 
 interface NewNoteCardProps {
   handleCreateNote: (content: string) => void
@@ -11,7 +11,7 @@ interface NewNoteCardProps {
 
 let speechRecognition: SpeechRecognition | null = null
 
-export function NewNoteCard({ handleCreateNote }: NewNoteCardProps) {
+export function NewNote({ handleCreateNote }: NewNoteCardProps) {
   const [shouldShowOnboarding, setShouldShowOnboarding] = useState(true)
   const [isRecording, setIsRecording] = useState(false)
 
@@ -155,7 +155,7 @@ export function NewNoteCard({ handleCreateNote }: NewNoteCardProps) {
               </div>
 
               {shouldShowOnboarding ? (
-                <NoteCreationMethodSelector
+                <NewNoteModeSelector
                   onStartRecording={handleStartRecording}
                   onStartWriting={handleStartWriting}
                 />

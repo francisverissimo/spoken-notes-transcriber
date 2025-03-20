@@ -4,11 +4,11 @@ import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { X } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button } from './button'
+import { Button } from '../components/button'
 
-type UnsavedNotes = Record<string, string>
+interface UnsavedNotes extends Record<string, string> {}
 
-type NoteCardProps = {
+interface NoteProps {
   note: {
     id: string
     date: Date
@@ -33,7 +33,7 @@ function removeUnsavedNoteEntry(noteId: string) {
   localStorage.setItem('unsaved_notes', JSON.stringify(unsavedNotes))
 }
 
-export function NoteCard({ note, deleteNote, editNote }: NoteCardProps) {
+export function Note({ note, deleteNote, editNote }: NoteProps) {
   const [shouldShowOnboarding, setShouldShowOnboarding] = useState(false)
 
   const unsavedNotes = getUnsavedNotes()
